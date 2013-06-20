@@ -21,7 +21,7 @@
 //          object.log();
 ///////////////////////////////////////////////////////////////////////////////
 
-//-------------- init prototype --------------
+
 Array.prototype.type = "Array";
 Number.prototype.type = "Number";
 String.prototype.type = "String";
@@ -29,7 +29,7 @@ Boolean.prototype.type = "Boolean";
 Date.prototype.type = "Date";
 Object.prototype.type = "Object";
 //Object.prototype.log = function(){Log(this)};
-//----------------- end init -----------------
+
 
 function Date_Today(bWithTime,bWithMillSec)
 {
