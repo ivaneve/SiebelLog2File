@@ -89,52 +89,29 @@ while (<FILE>) {
     }
 
 
-	my $tmp = '\s*=\s*(TheApplication\(\)|TheApp)\.(GetBusObject|NewPropertySet|GetService)\s*\(';
+	my $tmp = '\s*=\s*(?:TheApplication\(\)|TheApp)\.(GetBusObject|NewPropertySet|GetService)\s*\(';
 
-	if($line =~ m/$tmp/ && $line =~ m/^[\s\t]*var[\W]/){
+	my @matched = $line =~ m/$tmp/;
+	if(@matched && $line =~ m/^[\s\t]*var[\W]/){
+	#if($line =~ m/$tmp/ && $line =~ m/^[\s\t]*var[\W]/){
 
 		$line =~ s/$tmp.*//;
 		$line =~ s/^[\s\t]*//;
         $line =~ s/var[\s\t]*//;
 		
 		if($line !~ /\W/){
-			my $icount = 0;
-			if(/\.GetBusObject/){
-				substr($_, index($_, "$line"), length($line)) = "$line:BusObject";
-				$icount++;
-			}
-
-			if(/\.GetService/){
-				substr($_, index($_, "$line"), length($line)) = "$line:Service";
-				$icount++;
-			}
-
-			if(/\.NewPropertySet/){
-				substr($_, index($_, "$line"), length($line)) = "$line:PropertySet";
-				$icount++;
-			}
-
-			print CSV "$file,$func_name,$icount,".trim($line).",$_\n";
+			substr($_, index($_, "$line"), length($line)) = "$line:".substr($matched[0],3);
+			print CSV "$file,$func_name,1,".trim($line).",$_\n";
 		}
 	}
 
-	if($line =~ m/$tmp/ && $line !~ m/^[\s\t]*var[\W]/){
+	if(@matched && $line !~ m/^[\s\t]*var[\W]/){
 
 		$line =~ s/$tmp.*//;
 		$line =~ s/^[\s\t]*//;
 		
 		if($line !~ /\W/){
-			if(/\.GetBusObject/){
-				push (@variables, "$line:BusObject");
-			}
-
-			if(/\.GetService/){
-				push (@variables, "$line:Service");
-			}
-
-			if(/\.NewPropertySet/){
-				push (@variables, "$line:PropertySet");
-			}
+			push (@variables, "$line:".substr($matched[0],3));			
 		}
 	}
 
