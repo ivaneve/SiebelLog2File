@@ -34,6 +34,12 @@ eg:var bo,bc --> var bo:BusObject,bc:BusComp;
 ivan yao, HC ( yhf@zjhcsoft.com )
 2013/06/19
 
+
+BUG FIX:
+[2013/06/21]
+修复了var bHrd = GetSomethingMethod(oBc,oBo...)类似语句中,变量被替换的BUG
+
+
 =cut
 
 #my $dir = "G:\\M\\";
@@ -160,7 +166,7 @@ while (<FILE>) {
 			my $t = shift @lines;
 			chomp $t;
 			#only for start with 'var'
-			if($t =~ m/^[\s\t]*var[\W]/){
+			if($t =~ m/^[\s\t]*var[\W]/ && $t !~ /\(/){
 				my $tmp_line = $t;
 				$tmp_line =~ s/[\s\t]*var[\s\t]*//;
 				my @vars = split(/,|;/,$tmp_line);
