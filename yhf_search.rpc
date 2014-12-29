@@ -1,0 +1,141 @@
+CREATE OR REPLACE PROCEDURE yhf_search(s_str IN VARCHAR2,
+                                 s_type IN VARCHAR2 default '00',
+                                 s_gk in VARCHAR2 default 'gk_sys') is
+
+  --declare
+  -- Local variables here
+  /*
+  s_str varchar(200) := 'GetOperationResp';
+  s_type varchar(10) := '00';
+  s_gk varchar2(100) := 'gk';
+  */
+  /*
+  00 : All Object
+  01 : Applet Service Script
+  02 : Applet Browser Script
+  03 : BC Service Script
+  04 : BC Browser Script
+  05 : BS Service Script
+  06 : BS Browser Script
+  07 : Workflow Step
+
+  create table yhf_config(
+     seq varchar2(5),
+     type varchar2(50),
+     cursor varchar2(1500),
+     source_table varchar2(100),
+     long_flg varchar2(1)
+  );
+
+  create table yhf_script(
+    name varchar2(200),
+    method varchar2(200),
+    type varchar2(20),
+    create_dt date,
+    gk varchar2(100)
+  );
+
+  */
+
+  s_rep_id varchar2(15) := '3-1CAD7-1';--'1-1SMP-1';
+  obj_name varchar(500);
+  s_sql varchar2(500);
+
+  name varchar2(255);
+  script varchar2(32760);
+  object_id varchar2(15);
+
+  source_cursor integer;
+  ignore integer;
+
+  l_long_len  number;
+  l_buflen    number := 32760;
+  l_curpos    number := 0;
+
+  v_start number;
+  v_end number;
+
+
+  cursor config is
+      select g.seq,g.type,g.cursor,g.source_table
+      from yhf_config g
+      where g.long_flg = 'Y'
+      order by g.seq asc;
+begin
+  -- Test statements here
+  for c_one in config loop
+
+      if s_type = '00' OR instr(s_type,c_one.seq) > 0 then
+
+         select dbms_utility.get_time into v_start from dual;
+
+         if c_one.cursor is not null then
+            /*initial var*/
+            name := '';
+            script := '';
+            object_id := '';
+
+            source_cursor := dbms_sql.open_cursor;
+            dbms_output.put_line('sql = '||c_one.cursor);
+            /*
+             * DBMS_SQL.native := 1
+             * 语言标识
+             */
+            DBMS_SQL.PARSE(source_cursor,c_one.cursor,DBMS_SQL.native);
+
+            DBMS_SQL.BIND_VARIABLE(source_cursor, ':s_rep_id', s_rep_id);
+
+            DBMS_SQL.DEFINE_COLUMN(source_cursor, 1, name,255);
+            DBMS_SQL.define_column_long(source_cursor, 2);
+            DBMS_SQL.DEFINE_COLUMN(source_cursor, 3, object_id,15);
+
+            ignore := DBMS_SQL.EXECUTE(source_cursor);
+
+            loop
+                 if DBMS_SQL.FETCH_ROWS(source_cursor)>0 then
+                    -- get column values of the row
+                    DBMS_SQL.COLUMN_VALUE(source_cursor,1, name);
+                    --DBMS_SQL.column_value_long(source_cursor,2, script);
+                    DBMS_SQL.column_value_long(source_cursor,2,l_buflen,l_curpos,script,l_long_len);
+                    DBMS_SQL.COLUMN_VALUE(source_cursor,3, object_id);
+
+                    dbms_output.put_line('script = '||script);
+
+                    if REGEXP_INSTR(script,s_str) > 0 then
+                        s_sql := 'select name from '||c_one.source_table||' where row_id = :object_id';
+                        execute immediate s_sql into obj_name using object_id;
+                        /*
+                        select t.name into obj_name
+                        from siebel.s_applet t where t.row_id = b.applet_id;
+                        */
+                        insert into yhf_script values(obj_name,name,c_one.type,sysdate,s_gk);
+                        commit;
+                        /*dbms_output.put_line(applet||'.'||a.name);*/
+                    end if;
+                 else
+                    exit;
+                 end if;
+
+            end loop;
+
+            DBMS_SQL.CLOSE_CURSOR(source_cursor);
+
+         end if;
+         --spend time--
+         select dbms_utility.get_time into v_end from dual;
+         dbms_output.put_line(c_one.type||' Spend : '||(v_end-v_start)||'/ms');
+
+      end if;
+
+  end loop;
+  --exception
+  exception
+
+      when others then
+           if DBMS_SQL.IS_OPEN(source_cursor) then
+              DBMS_SQL.CLOSE_CURSOR(source_cursor);
+           end if;
+           dbms_output.put_line('exception');
+      raise;
+
+end;
