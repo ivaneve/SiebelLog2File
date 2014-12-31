@@ -1,3 +1,12 @@
+create table YHF_CONFIG
+(
+  SEQ          VARCHAR2(5),
+  TYPE         VARCHAR2(50),
+  CURSOR       VARCHAR2(1500),
+  SOURCE_TABLE VARCHAR2(50),
+  LONG_FLG     VARCHAR2(1)
+);
+
 delete from YHF_CONFIG;
 commit;
 prompt Loading YHF_CONFIG...
